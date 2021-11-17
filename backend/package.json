@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "bull": "^4.1.0",
+    "cheerio": "^1.0.0-rc.10",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "https-proxy-agent": "^5.0.0",
+    "ioredis": "^4.28.0",
+    "ipinfo": "^1.5.1",
+    "mongoose": "^6.0.12",
+    "socket.io": "^4.3.2"
+  },
+  "scripts": {
+    "test": "nodemon server",
+    "run": "node server"
+  }
+}
