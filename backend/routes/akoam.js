@@ -16,7 +16,6 @@ const router = express.Router();
 router.route("/").post(new_akoam_link, InfoFetcher);
 router.route("/start").post(check_id, StartScrapper);
 
-// MIDDLEWARE for checking link
 
 router.route("/old/").post(old_akoam_link, OldInfoFetcher);
 router.route("/old/start").post(check_id, StartOldScrapper);

@@ -74,7 +74,7 @@ export default function Home() {
             هتروح علي الموقع اللي عايزو تاخد لينك المسلسل وتحطه في المكان اللي
             فوق
           </p>
-          <p className="cursor-pointer">
+          <p className="cursor-pointer" onClick={() => window.open("https://youtu.be/vPSjksaxoQs","_blank")}>
             لو مش فاهم دوس هنا وشوف الفيديو هيوضحلك ازاي تستخدم الموقع
           </p>
         </div>
@@ -86,7 +86,9 @@ export default function Home() {
           </p>
           <p
             className="cursor-pointer"
-            onClick={() => (window.location.href = "https://eb.nasrika.com")}
+            onClick={() => {
+              window.open("https://eb.nasrika.com","_blank") 
+            }}
           >
             كمان في برنامج مخصص لأيجي بيست بيعمل نفس الوظيفه تقدر تحمله من هنا
           </p>
