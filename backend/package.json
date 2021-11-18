@@ -10,7 +10,6 @@
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "https-proxy-agent": "^5.0.0",
     "ioredis": "^4.28.0",
     "ipinfo": "^1.5.1",
     "mongoose": "^6.0.12",

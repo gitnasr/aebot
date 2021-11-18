@@ -27,7 +27,7 @@ exports.InfoFetcher = async (req, res) => {
   try {
     const { link } = req.body;
 
-    const page = await axios.get(link);
+    const page = await axios.get(encodeURI(link));
 
     const $ = cheerio.load(page.data);
 
@@ -71,14 +71,14 @@ exports.StartScrapper = async (req, res) => {
 
     const { id } = req.body;
     const isExisted = await Akoam.findById(id);
-    if (!isExisted) return res.sendStatus(404);
+    if (!isExisted || isExisted.operation) return res.sendStatus(404);
     const operation_id = "N"+randomBytes(7).toString("hex");
     const q = new Queue("akoam:new", Redis);
-    q.add({db:id}, { jobId: operation_id });
-    q.process(2, async function (job, done) {
+    q.add({db:id,db_data:isExisted}, { jobId: operation_id });
+    q.process(async (job, done) => {
       const start = Date.now();
       socket.sendMessage("Start", { id: job.id });
-      const episodes_links = await phase_1(isExisted.link,job.id );
+      const episodes_links = await phase_1(job.data.db_data.link,job.id );
       if (episodes_links.length === 0) return res.sendStatus(400);
       const phase_2_result = await phase_2(episodes_links,job.id);
       if (phase_2_result.length === 0) return res.sendStatus(400);
@@ -108,7 +108,7 @@ exports.OldInfoFetcher = async (req, res) => {
   try {
     const { link } = req.body;
 
-    const page = await axios.get(link);
+    const page = await axios.get(encodeURI(link));
 
     const $ = cheerio.load(page.data);
 
@@ -146,25 +146,27 @@ exports.StartOldScrapper = async (req, res) => {
   try {
     const { id } = req.body;
     const isExisted = await Akoam.findById(id);
-    if (!isExisted) return res.sendStatus(404);
+    if (!isExisted || isExisted.operation) return res.sendStatus(404);
     const operation_id = "N" + randomBytes(7).toString("hex");
 
-    const page = await axios.get(isExisted.link);
 
-    const $ = cheerio.load(page.data);
 
     const socket = new Socket();
 
     const q = new Queue("akoam:old", Redis);
-    q.add({ db: id }, { jobId: operation_id });
-    q.process(async function (job, done) {
+    q.add({ db: id,db_data:isExisted }, { jobId: operation_id });
+    q.process(async (job, done) => {
       try {
         const start = Date.now();
-        const episodes_links = [];
-        const direct_links = [];
+        const page = await axios.get(job.data.db_data.link);
+        const $ = cheerio.load(page.data);
+        let episodes_links = [];
+        let direct_links = [];
         $(".akoam-buttons-group")
           .find("a")
-          .each((e, i) => episodes_links.push(i.attribs.href));
+          .each((e, i) => {
+            console.log(i.attribs.href)
+            episodes_links.push(i.attribs.href)});
         let unique_episodes_links = [...new Set(episodes_links)];
         for (let index = 0; index < unique_episodes_links.length; index++) {
           socket.sendMessage("Progress", {
@@ -178,9 +180,9 @@ exports.StartOldScrapper = async (req, res) => {
               100
             ).toFixed(1)}`
           );
-          const episode = unique_episodes_links[index];
+          let episode = unique_episodes_links[index];
 
-          const { data } = await axios.post(episode, null, {
+          let { data } = await axios.post(episode, null, {
             headers: { "x-requested-with": "XMLHttpRequest", referer: episode },
           });
 
@@ -196,7 +198,8 @@ exports.StartOldScrapper = async (req, res) => {
         );
 
         socket.sendMessage("Done", { id: job.id });
-
+        unique_episodes_links = []
+        episodes_links =[]
         done(null, { direct_links, time });
       } catch (error) {
         console.error(error);

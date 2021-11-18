@@ -13,8 +13,11 @@ exports.phase_1 = async (link, id) => {
   $("div.col-md-auto, text-center pb-3 pb-md-0")
     .children()
     .each((i, r) => {
-      if (isValidHttpUrl(r.attribs.href)) episodes_links.push(r.attribs.href);
-      socket.sendMessage("phase", { id, status: `Phase 1 : Episode ${i + 1}` });
+      if (isValidHttpUrl(r.attribs.href)) {
+        episodes_links.push(r.attribs.href);
+        socket.sendMessage("phase", { id, status: `Phase 1 : Episode ${i + 1}` });
+      
+      }
     });
 
   return episodes_links;

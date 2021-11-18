@@ -64,7 +64,7 @@ function Result() {
           value={Data.result.direct_links.join("\n")}
           onClick={() => {
             navigator.clipboard.writeText(Data.result.direct_links.join("\n"));
-            toast("تم نسخ اللينكات بنجاح");
+            toast.success("تم نسخ اللينكات بنجاح");
           }}
         />
         <span className="mb-2 text-sm text-left text-gray-500">

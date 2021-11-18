@@ -8,6 +8,8 @@ const { randomBytes } = require("crypto");
 const { RedisClient } = require("../libs/redis");
 const Socket = require("../libs/Socket");
 const {isValidHttpUrl} = require("../libs/helpers/is.url")
+const Redis = RedisClient();
+
 exports.SearchByOperationId = async (req, res) => {
   try {
     const { id } = req.body;
@@ -36,7 +38,7 @@ exports.InfoFetcher = async (req, res) => {
 
     const title = $(".Title").contents()[0].data;
     const poster = $(".Poster").children("img")[0].attribs.src;
-    const story = $(".descrip")[0].children[0].data;
+    const story = $(".descrip")[0].children[0]?.data;
     const episodes = $(".ContainerEpisodesList").children().length;
 
     const user_ip = await get_ip_info(req);
@@ -63,7 +65,6 @@ exports.InfoFetcher = async (req, res) => {
   }
 };
 exports.StartScrapper = async (req, res) => {
-  const Redis = RedisClient();
   const socket = new Socket();
 
   try {
@@ -73,7 +74,7 @@ exports.StartScrapper = async (req, res) => {
     const operation_id = "N" + randomBytes(7).toString("hex");
     const q = new Queue("arabseed", Redis);
     q.add(
-      { db: id },
+      { db: id , db_data:isExisted},
       {
         jobId: operation_id,
         attempts: isExisted.episodes,
@@ -87,8 +88,8 @@ exports.StartScrapper = async (req, res) => {
     
       const start = Date.now();
 
-        const { link } = isExisted;
-        const page = await axios.get(`${process.env.API_PROXY}${link}`);
+        const { db_data } = job.data;
+        const page = await axios.get(`${process.env.API_PROXY}${db_data.link}`);
         const $ = cheerio.load(page.data);
         const episodes_links = [];
         $("div.ContainerEpisodesList")
