@@ -1,12 +1,13 @@
 const { randomBytes } = require("crypto");
 const { default: axios } = require("axios");
 const cheerio = require("cheerio");
-const { phase_1, phase_2, phase_3, phase_4 } = require("../libs/akoam");
-const Akoam = require("../models/akoam");
-const { get_ip_info } = require("../libs/helpers/ip");
+const { phase_1, phase_2, phase_3, phase_4, } = require("../libs/akoam");
+const Scrapy = require("../models/scrapy");
 const Queue = require("bull");
 const { RedisClient } = require("../libs/redis");
-const Socket = require("../libs/Socket");
+const catchAsync = require("../utils/catchAsync");
+const httpStatus = require("http-status");
+const {useUpdateStatus} = require("../libs/Scrapy");
 
 const Redis = RedisClient();
 
@@ -14,7 +15,8 @@ exports.SearchByOperationId = async (req, res) => {
   try {
     const { id } = req.body;
 
-    const isExisted = await Akoam.findOne({ operation: id }).select("-user");
+    const isExisted = await Scrapy.findOne({ operation: id }).select("-user");
+    console.log(isExisted)
     if (!isExisted) return res.sendStatus(404);
     return res.json({ result: isExisted });
   } catch (error) {
@@ -23,89 +25,97 @@ exports.SearchByOperationId = async (req, res) => {
     return res.sendStatus(500);
   }
 };
-exports.InfoFetcher = async (req, res) => {
-  try {
-    const { link } = req.body;
+exports.InfoFetcher = catchAsync(async (req, res) => {
+  const {link} = req.body;
 
-    const page = await axios.get(encodeURI(link));
+  const page = await axios.get(encodeURI(link));
 
-    const $ = cheerio.load(page.data);
+  const $ = cheerio.load(page.data);
 
-    const title = $("h1")?.text();
-    const poster = $(
+  const title = $("h1")?.text();
+  const poster = $(
       ".col-lg-3, col-md-4 text-center mb-5 mb-md-0"
-    ).children()[0]?.attribs.href;
+  ).children()[0]?.attribs.href;
 
-    const episodes = $(".entry-date").length;
+  const episodes = $(".entry-date").length;
 
-    const story = $("p")[0]?.children[0]?.data;
+  const story = $("p")[0]?.children[0]?.data;
 
-    const user_ip = await get_ip_info(req);
 
-    let user_info = {};
 
-    user_info.ip = user_ip;
+  const newAkoam = await Scrapy.create({
+    link,
+    title,
+    poster,
+    episodes,
+    story,
+    user: {
+      ip:req.ip,
+      info:req.ipInfo,
+      source:req.source
+    },
+  });
 
-    const newAkoam = await Akoam.create({
-      link,
-      title,
-      poster,
-      episodes,
-      story,
-      user: user_info,
-    });
+  return res
+      .status(200)
+      .json({link, title, poster, episodes, story, id: newAkoam._id});
 
-    return res
-      .status(201)
-      .json({ link, title, poster, episodes, story, id: newAkoam._id });
-  } catch (error) {
-    console.error(error);
+})
 
-    return res.sendStatus(500);
-  }
-};
 
-exports.StartScrapper = async (req, res) => {
-  try {
-    const socket = new Socket();
+exports.StartScrapper = catchAsync (async (req, res) => {
+  const { id } = req.body;
+  const isExisted = await Scrapy.findById(id);
 
-    const { id } = req.body;
-    const isExisted = await Akoam.findById(id);
-    if (!isExisted || isExisted.operation) return res.sendStatus(404);
-    const operation_id = "N"+randomBytes(7).toString("hex");
-    const q = new Queue("akoam:new", Redis);
-    q.add({db:id,db_data:isExisted}, { jobId: operation_id });
-    q.process(async (job, done) => {
-      const start = Date.now();
-      socket.sendMessage("Start", { id: job.id });
-      const episodes_links = await phase_1(job.data.db_data.link,job.id );
-      if (episodes_links.length === 0) return res.sendStatus(400);
-      const phase_2_result = await phase_2(episodes_links,job.id);
-      if (phase_2_result.length === 0) return res.sendStatus(400);
-      const phase_3_result = await phase_3(phase_2_result,job.id);
-      if (phase_3_result.length === 0) return res.sendStatus(400);
-      const direct_links = await phase_4(phase_3_result,job.id);
-      const end = Date.now();
-      const time = (end - start) / 1000;
-      await Akoam.findOneAndUpdate(
-        { _id: job.data.db },
-        { operation: job.id, result: { direct_links, time } }
-      );
+  if (!isExisted) return res.sendStatus(httpStatus.NO_CONTENT)
+  if (isExisted.operation) return res.json(isExisted);
 
-      socket.sendMessage("Done", { id: job.id });
-      done(null, { direct_links, time });
-    });
 
-    return res.status(201).json({ id: operation_id });
-  } catch (error) {
-    console.error(error);
+  const operation_id = "N"+randomBytes(7).toString("hex");
+  const q = new Queue("akoam:new", Redis);
 
-    return res.sendStatus(500);
-  }
-};
 
-exports.OldInfoFetcher = async (req, res) => {
-  try {
+  q.add({db:id,db_data:isExisted}, { jobId: operation_id });
+  q.process(async (job, done) => {
+    const docId = job.data.db_data._id
+
+
+    try{
+
+
+    const start = Date.now();
+
+    const episodes_links = await phase_1(job.data.db_data.link,docId );
+    if (episodes_links.length === 0) return useUpdateStatus("اممم مشكله في جلب لينكات الحلقات، ربما في مشكله في اكوام. حاول كمان شويه او كلمني عشان اعمل ابديت",docId)
+
+    const phase_2_result = await phase_2(episodes_links,job.data.db_data._id);
+    if (phase_2_result.length === 0)  return useUpdateStatus("اممم مشكله في جلب لينكات التحميل1، ربما في مشكله في اكوام. حاول كمان شويه او كلمني عشان اعمل ابديت",docId)
+
+    const phase_3_result = await phase_3(phase_2_result,docId);
+    if (phase_3_result.length === 0) return useUpdateStatus("اممم مشكله في جلب لينكات التحميل2، ربما في مشكله في اكوام. حاول كمان شويه او كلمني عشان اعمل ابديت",docId)
+
+    const direct_links = await phase_4(phase_3_result,docId);
+
+    const end = Date.now();
+    const time = (end - start) / 1000;
+    await Scrapy.findByIdAndUpdate(
+        docId,
+        { operation: job.id, result: { direct_links, time } ,status:"تمت العملية بنجاح",isSuccess:true  }
+    );
+
+    done(null, { direct_links, time });
+
+    }catch (e) {
+      await useUpdateStatus(`حدثت مشكله، مع الاسف`,docId,true)
+      done(e)
+    }
+  });
+
+  return res.status(200).json({ id: operation_id });
+
+})
+
+exports.OldInfoFetcher =catchAsync(async (req, res) => {
     const { link } = req.body;
 
     const page = await axios.get(encodeURI(link));
@@ -117,45 +127,39 @@ exports.OldInfoFetcher = async (req, res) => {
     const episodes = $(".akoam-buttons-group").length;
     const story = "القصه غير متوفره في الوقت الحالي";
 
-    const user_ip = await get_ip_info(req);
 
-    let user_info = {};
-
-    user_info.ip = user_ip;
-
-    const newAkoam = await Akoam.create({
+    const newAkoam = await Scrapy.create({
       link,
       title,
       poster,
       episodes,
       story,
-      user: user_info,
+      user: {
+        ip:req.ip,
+        info:req.ipInfo,
+        source:req.source
+      },
     });
 
     return res
-      .status(201)
-      .json({ link, title, poster, episodes, story, id: newAkoam._id });
-  } catch (error) {
-    console.error(error);
+        .status(200)
+        .json({ link, title, poster, episodes, story, id: newAkoam._id });
+  })
 
-    return res.sendStatus(500);
-  }
-};
-
-exports.StartOldScrapper = async (req, res) => {
-  try {
+exports.StartOldScrapper = catchAsync(async (req, res) => {
     const { id } = req.body;
-    const isExisted = await Akoam.findById(id);
-    if (!isExisted || isExisted.operation) return res.sendStatus(404);
+    const isExisted = await Scrapy.findById(id);
+    if (!isExisted || isExisted.operation) return res.status(httpStatus.FOUND).json(isExisted);
     const operation_id = "N" + randomBytes(7).toString("hex");
 
 
 
-    const socket = new Socket();
-
     const q = new Queue("akoam:old", Redis);
     q.add({ db: id,db_data:isExisted }, { jobId: operation_id });
     q.process(async (job, done) => {
+      const docId = job.data.db_data._id
+
+
       try {
         const start = Date.now();
         const page = await axios.get(job.data.db_data.link);
@@ -163,54 +167,46 @@ exports.StartOldScrapper = async (req, res) => {
         let episodes_links = [];
         let direct_links = [];
         $(".akoam-buttons-group")
-          .find("a")
-          .each((e, i) => {
-            console.log(i.attribs.href)
-            episodes_links.push(i.attribs.href)});
+            .find("a")
+            .each((e, i) => {
+              episodes_links.push(i.attribs.href)});
+
         let unique_episodes_links = [...new Set(episodes_links)];
+
         for (let index = 0; index < unique_episodes_links.length; index++) {
-          socket.sendMessage("Progress", {
-            p: (((index + 1) / unique_episodes_links.length) * 100).toFixed(1),
-            id: job.id,
-          });
+          const progress = (((index + 1) / unique_episodes_links.length) * 100).toFixed(1)
 
-          console.log(
-            `Progress : ${(
-              ((index + 1) / unique_episodes_links.length) *
-              100
-            ).toFixed(1)}`
-          );
-          let episode = unique_episodes_links[index];
+          const link = unique_episodes_links[index]
+          const hash = link.split("/").pop()
+          const read_hashed_link = await axios.post(`https://mawsueaa.com/link/read?hash=${hash}`)
 
-          let { data } = await axios.post(episode, null, {
-            headers: { "x-requested-with": "XMLHttpRequest", referer: episode },
-          });
+          if (read_hashed_link.data.success){
+            const preDirectLink = read_hashed_link.data.result.route
+            const { data } = await axios.post(preDirectLink, null, {
+              headers: { "x-requested-with": "XMLHttpRequest", referer: preDirectLink },
+            });
+            direct_links.push(data.direct_link);
+            await useUpdateStatus(`تم اتجاز: %${progress}`,docId)
 
-          direct_links.push(data.direct_link);
+          }
         }
 
         const end = Date.now();
         const time = (end - start) / 1000;
 
-        await Akoam.findOneAndUpdate(
-          { _id: job.data.db },
-          { operation: job.id, result: { direct_links, time } }
+        await Scrapy.findOneAndUpdate(
+            { _id: job.data.db },
+            { operation: job.id, result: { direct_links, time },status:"انتهي بنجاح" ,isSuccess:true}
         );
 
-        socket.sendMessage("Done", { id: job.id });
-        unique_episodes_links = []
         episodes_links =[]
         done(null, { direct_links, time });
       } catch (error) {
-        console.error(error);
+        await useUpdateStatus(`حدثت مشكله، مع الاسف`,docId,true)
+
         done(error);
       }
     });
 
-    return res.status(201).json({ id: operation_id });
-  } catch (error) {
-    console.error(error);
-
-    return res.sendStatus(500);
-  }
-};
+    return res.status(httpStatus.CREATED).json({ id: operation_id });
+  })

@@ -7,16 +7,26 @@
     "axios": "^0.24.0",
     "bull": "^4.1.0",
     "cheerio": "^1.0.0-rc.10",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-useragent": "^1.0.15",
+    "helmet": "^5.1.0",
+    "http-status": "^1.5.2",
     "ioredis": "^4.28.0",
-    "ipinfo": "^1.5.1",
+    "joi": "^17.6.0",
     "mongoose": "^6.0.12",
-    "socket.io": "^4.3.2"
+    "morgan": "^1.10.0",
+    "node-ipinfo": "^3.1.0",
+    "request-ip": "^2.2.0",
+    "socket.io": "^4.3.2",
+    "winston": "^3.7.2",
+    "xss-clean": "^0.1.1"
   },
   "scripts": {
-    "test": "nodemon server",
-    "run": "node server"
+    "dev": "nodemon server",
+    "start": "node server"
   }
 }

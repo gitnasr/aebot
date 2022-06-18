@@ -1,6 +1,5 @@
 const { default: axios } = require("axios");
 const cheerio = require("cheerio");
-const { get_ip_info } = require("../libs/helpers/ip");
 const Arabseed = require("../models/arabseed");
 const Queue = require("bull");
 const qs = require("qs");
@@ -9,30 +8,29 @@ const { RedisClient } = require("../libs/redis");
 const Socket = require("../libs/Socket");
 const {isValidHttpUrl} = require("../libs/helpers/is.url")
 const Redis = RedisClient();
+const Scrapy = require("../models/scrapy");
+const config = require("../config/config");
+const httpStatus = require("http-status");
+const catchAsync = require("../utils/catchAsync");
+exports.SearchByOperationId = catchAsync(async (req, res) => {
+  const { id } = req.body;
 
-exports.SearchByOperationId = async (req, res) => {
-  try {
-    const { id } = req.body;
+  const isExisted = await Scrapy.findOne({ operation: id }).select("-user");
+  if (!isExisted) return res.sendStatus(httpStatus.NO_CONTENT);
+  return res.json(isExisted);
+})
 
-    const isExisted = await Arabseed.findOne({ operation: id }).select("-user");
-    if (!isExisted) return res.sendStatus(404);
-    return res.json({ result: isExisted });
-  } catch (error) {
-    console.error(error);
-
-    return res.sendStatus(500);
-  }
-};
 exports.InfoFetcher = async (req, res) => {
   try {
  
     const { link } = req.body;
-    const page = await axios.get(`${process.env.API_PROXY}${link}`, {
+    const page = await axios.get(`${config.PROXY_API}${link}`, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36",
       },
     });
+
 
     const $ = cheerio.load(page.data);
 
@@ -41,19 +39,20 @@ exports.InfoFetcher = async (req, res) => {
     const story = $(".descrip")[0].children[0]?.data;
     const episodes = $(".ContainerEpisodesList").children().length;
 
-    const user_ip = await get_ip_info(req);
 
-    let user_info = {};
 
-    user_info.ip = user_ip;
-
-    const newArabseed = await Arabseed.create({
+    const newArabseed = await Scrapy.create({
       link,
       title,
       poster,
       episodes,
       story,
-      user: user_info,
+      user: {
+        ip:req.ip,
+        info:req.ipInfo,
+        source:req.source
+      },
+      service:"arabseed"
     });
 
     return res

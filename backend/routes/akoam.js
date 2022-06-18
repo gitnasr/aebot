@@ -1,26 +1,23 @@
 const express = require("express");
 const {
-  InfoFetcher,
-  StartScrapper,
-  OldInfoFetcher,
-  StartOldScrapper,
-  SearchByOperationId,
+    InfoFetcher, StartScrapper, OldInfoFetcher, StartOldScrapper, SearchByOperationId,
 } = require("../controller/akoam");
-const {
-  old_akoam_link,
-  new_akoam_link,
-  check_id,
-} = require("../libs/middlewares/validators");
+const validate = require("../libs/validators");
+const AkoamValidators = require("../libs/validators/akoam");
+const {InfoAndSourceRecorder} = require("../libs/middlewares/user.info");
+const {FetcherIdValidator, OperationIdValidator} = require("../libs/validators/public");
+
+
 const router = express.Router();
-// TOKEN MIDDLEWARE for make sure that only from website and Rate Limter
-router.route("/").post(new_akoam_link, InfoFetcher);
-router.route("/start").post(check_id, StartScrapper);
+// TOKEN MIDDLEWARE for make sure that only from website and Rate Limiter
+router.route("/").post(validate(AkoamValidators.ValidateNewAkoamLink), InfoAndSourceRecorder,InfoFetcher);
+router.route("/start").post(validate(FetcherIdValidator), StartScrapper);
 
 
-router.route("/old/").post(old_akoam_link, OldInfoFetcher);
-router.route("/old/start").post(check_id, StartOldScrapper);
+router.route("/old/").post(validate(AkoamValidators.ValidateOldAkoamLink), InfoAndSourceRecorder,OldInfoFetcher);
+router.route("/old/start").post(validate(FetcherIdValidator), StartOldScrapper);
 
-router.route("/search").post(SearchByOperationId);
+router.route("/search").post(validate(OperationIdValidator),SearchByOperationId);
 
 
 module.exports = router;
