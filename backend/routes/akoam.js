@@ -17,7 +17,6 @@ router.route("/start").post(validate(FetcherIdValidator), StartScrapper);
 router.route("/old/").post(validate(AkoamValidators.ValidateOldAkoamLink), InfoAndSourceRecorder,OldInfoFetcher);
 router.route("/old/start").post(validate(FetcherIdValidator), StartOldScrapper);
 
-router.route("/search").post(validate(OperationIdValidator),SearchByOperationId);
 
 
 module.exports = router;

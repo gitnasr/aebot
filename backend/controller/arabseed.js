@@ -1,180 +1,87 @@
-const { default: axios } = require("axios");
-const cheerio = require("cheerio");
-const Arabseed = require("../models/arabseed");
 const Queue = require("bull");
-const qs = require("qs");
-const { randomBytes } = require("crypto");
-const { RedisClient } = require("../libs/redis");
-const Socket = require("../libs/Socket");
-const {isValidHttpUrl} = require("../libs/helpers/is.url")
+const {randomBytes} = require("crypto");
+const {RedisClient} = require("../libs/redis");
 const Redis = RedisClient();
 const Scrapy = require("../models/scrapy");
-const config = require("../config/config");
 const httpStatus = require("http-status");
 const catchAsync = require("../utils/catchAsync");
-exports.SearchByOperationId = catchAsync(async (req, res) => {
-  const { id } = req.body;
-
-  const isExisted = await Scrapy.findOne({ operation: id }).select("-user");
-  if (!isExisted) return res.sendStatus(httpStatus.NO_CONTENT);
-  return res.json(isExisted);
-})
-
-exports.InfoFetcher = async (req, res) => {
-  try {
- 
-    const { link } = req.body;
-    const page = await axios.get(`${config.PROXY_API}${link}`, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Mobile Safari/537.36",
-      },
-    });
+const Arabseeder = require("../libs/Arabseed");
+const {useUpdateStatus} = require("../libs/Scrapy");
 
 
-    const $ = cheerio.load(page.data);
+exports.InfoFetcher = catchAsync(async (req, res) => {
 
-    const title = $(".Title").contents()[0].data;
-    const poster = $(".Poster").children("img")[0].attribs.src;
-    const story = $(".descrip")[0].children[0]?.data;
-    const episodes = $(".ContainerEpisodesList").children().length;
+    const {link} = req.body;
 
+    let domain = (new URL(link)).hostname;
 
+    const data = await Arabseeder.SendRequestByProxy(link)
 
+    const {story, info, episodes, title, service, poster} = Arabseeder.GetArabseedEpisodesLinks(data)
+    const user = {
+        ip: req.ip, info: req.ipInfo, source: req.source
+    }
     const newArabseed = await Scrapy.create({
-      link,
-      title,
-      poster,
-      episodes,
-      story,
-      user: {
-        ip:req.ip,
-        info:req.ipInfo,
-        source:req.source
-      },
-      service:"arabseed"
+        link, story, info, episodes: episodes.length, title, service, poster, user, domain,path:"arabseed",logo:"https://arabseed.xyz/lgo222.png"
     });
 
     return res
-      .status(201)
-      .json({ link, title, poster, episodes, story, id: newArabseed._id });
-  } catch (error) {
-    console.log(error);
-    return res.sendStatus(500);
-  }
-};
-exports.StartScrapper = async (req, res) => {
-  const socket = new Socket();
+        .status(httpStatus.CREATED).json(newArabseed);
 
-  try {
-    const { id } = req.body;
-    const isExisted = await Arabseed.findById(id);
-    if (!isExisted || isExisted.operation) return res.sendStatus(404);
-    const operation_id = "N" + randomBytes(7).toString("hex");
-    const q = new Queue("arabseed", Redis);
-    q.add(
-      { db: id , db_data:isExisted},
-      {
+})
+exports.StartScrapper = catchAsync(async (req, res) => {
+
+    const {id, quality} = req.body;
+    const isExisted = await Scrapy.findById(id).where({service:"arabseed"})
+    if (!isExisted) return res.sendStatus(httpStatus.NO_CONTENT);
+    if (isExisted.operation) return res.status(httpStatus.FOUND).json(isExisted);
+
+    const operation_id = "n" + randomBytes(7).toString("hex").toLowerCase();
+    const q = new Queue("arabseed:new", Redis);
+    q.add({db: id, quality}, {
         jobId: operation_id,
-        attempts: isExisted.episodes,
-        backoff: { type: "fixed", delay: 1000 },
-      }
-    );
+
+    },{});
 
     q.process(async (job, done) => {
-      const final_links = [];
+        const start = Date.now();
 
-    
-      const start = Date.now();
+        const {quality, db} = job.data;
+        const q = quality - 1
+        const doc = await Scrapy.findByIdAndUpdate(db, {operation: job.id,quality: q,isProcessing:true}, {new: true});
+        try {
+                await useUpdateStatus("تم بدأ العملية ...", doc._id,)
+            const PrimeDownloadLinks = await Arabseeder.GetArabseedDownloadLinks(doc.info.episodes_links, q, doc.link, doc._id)
 
-        const { db_data } = job.data;
-        const page = await axios.get(`${process.env.API_PROXY}${db_data.link}`);
-        const $ = cheerio.load(page.data);
-        const episodes_links = [];
-        $("div.ContainerEpisodesList")
-          .children()
-          .each((e, i) => {
-            console.log(i.attribs.href)
-            if (isValidHttpUrl(i.attribs.href) && !undefined){
-              episodes_links.push(i.attribs.href + "/download/");
-              socket.sendMessage("phase", {
-                id: job.id,
-                status: `Phase 1: Episode ${e + 1}`,
-              });
+            if (PrimeDownloadLinks.length === 0) {
+                return useUpdateStatus("مع الاسف، حدثت مشكلة في كود1، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
             }
-         
-          });
-          socket.sendMessage("phase", {
-            id: job.id,
-            status: `Starting Phase #2`
-          });
+            const FinalLinks = await Arabseeder.GetServerDownloadLinks(PrimeDownloadLinks, doc._id)
 
-        const download_links = [];
+            if (FinalLinks.length === 0) {
+                return useUpdateStatus("مع الاسف، حدثت مشكلة في كود2، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
 
-        for (let i = 0; i < episodes_links.length; i++) {
-          const download_link = episodes_links[i];
-          
-          const { data } = await axios.get(`${process.env.API_PROXY}${download_link}`);
-          console.log(`Phase 2: Episode ${i + 1}`);
-          const $ = cheerio.load(data);
+            }
+            const end = Date.now();
+            const time = (end - start) / 1000;
+            await Scrapy.findByIdAndUpdate(db, {
+                 result: {
+                    direct_links: FinalLinks, time,
+                }, status: "تمت العملية بنجاح", isSuccess: true,
+                isProcessing:false,
+                isError:false,
+            });
 
-          const phase_2 = $("a.downloadsLink")[0].attribs.href;
-          download_links.push(phase_2);
-          socket.sendMessage("phase", {
-            id: job.id,
-            status: `Phase 2: Episode ${i + 1}`,
-          });
+            done(null, {FinalLinks, time});
+        } catch (e) {
+
+            await useUpdateStatus("مع الاسف، حدثت مشكلة عموما، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
+
+            done(e)
         }
 
-        for (let i = 0; i < download_links.length; i++) {
-          const direct_link = download_links[i];
-
-          let token = direct_link.split("/")[3];
-
-          let payload = qs.stringify({
-            op: "download2",
-            id: token,
-            rand: "",
-            referer: "https://arabseed.ws/",
-            method_free: "",
-            method_premium: "",
-          });
-          
-          const { data } = await axios.post(`${process.env.API_PROXY}${direct_link}`, payload, {
-            headers: {
-              "content-type": "application/x-www-form-urlencoded",
-            },
-          });
-          const $ = cheerio.load(data);
-          console.log(`Phase 3: Episode ${i + 1}`);
-
-          let final_link = $("#direct_link").children("a")[0].attribs.href;
-
-          final_links.push(final_link);
-          socket.sendMessage("phase", {
-            id: job.id,
-            status: `Phase 3: Episode ${i + 1}`,
-          });
-        }
-        const end = Date.now();
-        const time = (end - start) / 1000;
-        await Arabseed.findByIdAndUpdate(job.data.db, {
-          operation: job.id,
-          result: {
-            direct_links: final_links,
-            time,
-          },
-          episodes:final_links.length
-        });
-        socket.sendMessage("Done", { id: job.id });
-
-        done(null, { final_links, time });
-      
     });
 
-    return res.json({ id: operation_id });
-  } catch (error) {
-    console.log(error);
-    return res.sendStatus(500);
-  }
-};
+    return res.status(httpStatus.CREATED).json({operation:operation_id });
+
+})

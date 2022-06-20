@@ -1,19 +1,39 @@
 const { default: axios } = require("axios");
 const cheerio = require("cheerio");
 const { isValidHttpUrl } = require("./helpers/is.url");
-const {useUpdateStatus} = require("./Scrapy");
+const {useUpdateStatus, SendRequestByAxios} = require("./Scrapy");
 
-exports.phase_1 = async (link, id) => {
+
+exports.AkwamNewInfoFetcher = async (link) => {
+
+    const html = await SendRequestByAxios(link)
+    let domain = (new URL(link)).hostname;
+
+
+    const title = html("h1")?.text();
+    const poster = html(
+        ".col-lg-3, col-md-4 text-center mb-5 mb-md-0"
+    ).children()[0]?.attribs.href;
+
+    const episodes = html(".entry-date").length;
+
+    const story = html("p")[0]?.children[0]?.data;
+
+    return {title,poster,episodes,story,domain}
+}
+
+
+
+exports.AkwamNewGetEpisodesLinks = async (link, id) => {
     const episodes_links = [];
-    const { data } = await axios.get(link);
-    const $ = cheerio.load(data);
+    const html =await SendRequestByAxios(link)
 
-    $("div.col-md-auto, text-center pb-3 pb-md-0")
+    html("div.col-md-auto, text-center pb-3 pb-md-0")
         .children()
         .each(async (i, r) => {
           if (isValidHttpUrl(r.attribs.href)) {
-            episodes_links.push(r.attribs.href);
-            await useUpdateStatus(`لينكات الحلقات: الحلقه رقم #${i+1}`,id)
+                episodes_links.push(r.attribs.href);
+                await useUpdateStatus(`لينكات الحلقات: الحلقه رقم #${i+1}`,id)
 
           }
         });
@@ -23,59 +43,105 @@ exports.phase_1 = async (link, id) => {
 
 };
 
-exports.phase_2 = async (episodes_links, id) => {
-  const phase_2_link = [];
+exports.AkwamNewGetShortedLinks = async (episodes_links, id) => {
+  const Shorted = [];
 
   for (let i = 0; i < episodes_links.length; i++) {
       const link = episodes_links[i];
-      const { data } = await axios.get(encodeURI(link));
-      const $ = cheerio.load(data);
+      const html = await SendRequestByAxios(link)
 
-      const phase_2 = $(
-        "a.link-btn, link-download d-flex align-items-center px-3"
-      )[1].attribs.href;
-      if (isValidHttpUrl(phase_2)){
-        phase_2_link.push(phase_2);
-        await useUpdateStatus(`لينكات التحميل الاولية: الحلقه رقم #${i+1}`,id)
+      const shorted = html( "a.link-btn, link-download d-flex align-items-center px-3" )[1].attribs.href;
+      if (isValidHttpUrl(shorted)){
+          Shorted.push(shorted);
+          await useUpdateStatus(`لينكات التحميل الاولية: الحلقه رقم #${i+1}`,id)
 
       }
 
   }
-    return phase_2_link;
+    return Shorted;
 };
 
-exports.phase_3 = async (phase_2_links, id) => {
+exports.AkwamNewGetPreDirectLinks = async (Shorted, id) => {
 
-  const phase_3_link = [];
+  const PreDirects = [];
 
-  for (let i = 0; i < phase_2_links.length; i++) {
-    const link = phase_2_links[i];
-    const { data } = await axios.get(encodeURI(link));
-    const $ = cheerio.load(data);
+  for (let i = 0; i < Shorted.length; i++) {
+    const link = Shorted[i];
+    const html = await SendRequestByAxios(link)
 
-    const phase_3 = $(".download-link").map((i, x) => $(x).attr("href"))[0];
+    const preDirect = html(".download-link").map((i, x) => html(x).attr("href"))[0];
 
-    if (isValidHttpUrl(phase_3)) phase_3_link.push(phase_3);
+    if (isValidHttpUrl(preDirect)) PreDirects.push(preDirect);
     await useUpdateStatus(`لينكات التحميل ما قبل الاخيرة: الحلقه رقم #${i+1}`,id)
   }
-  return phase_3_link;
+  return PreDirects;
 };
 
-exports.phase_4 = async (phase_3_links, id) => {
+exports.AkwamNewGetDirectLinks = async (PreDirects, id) => {
 
-  const phase_4_link = [];
+  const DirectLinks = [];
 
-  for (let i = 0; i < phase_3_links.length; i++) {
-    const link = phase_3_links[i];
-    const { data } = await axios.get(encodeURI(link));
-    const $ = cheerio.load(data);
+  for (let i = 0; i < PreDirects.length; i++) {
+    const link = PreDirects[i];
+      const html = await SendRequestByAxios(link)
 
-    $(".btn-loader")
+      html(".btn-loader")
       .children()
       .each((i, r) => {
-        if (isValidHttpUrl(r.attribs.href)) phase_4_link.push(r.attribs.href);
+        if (isValidHttpUrl(r.attribs.href)) DirectLinks.push(r.attribs.href);
       });
     await useUpdateStatus(`لينكات التحميل الاخيرة: الحلقه رقم #${i+1}`,id)
   }
-  return phase_4_link;
+  return DirectLinks;
 };
+// =====================================================================================================================
+
+
+exports.AkwamOldGetInfo = async (link) => {
+    const html = await SendRequestByAxios(link)
+    const title = html(".sub_title").find("h1").text().trim();
+    const poster = html(".main_img")[0].attribs.src;
+    const episodes = html(".akoam-buttons-group").length;
+    const story = "القصه غير متوفره في الوقت الحالي";
+    let domain = (new URL(link)).hostname;
+
+    return {
+        title,
+        poster,
+        episodes,
+        story,
+        domain
+    }
+}
+
+exports.AkwamOldGetEpisodesLink = async (link) => {
+    const Episodes_Links = []
+    const html = await SendRequestByAxios(link)
+    html(".akoam-buttons-group")
+        .find("a")
+        .each((e, i) => {
+            Episodes_Links.push(i.attribs.href)});
+
+    return [...new Set(Episodes_Links)];
+}
+exports.AkwamOldGetDirectLinks = async (episodes,id) => {
+    const DirectLinks = []
+    for (let index = 0; index < episodes.length; index++) {
+        const progress = (((index + 1) / episodes.length) * 100).toFixed(1)
+
+        const link = episodes[index]
+        const hash = link.split("/").pop()
+        const read_hashed_link = await axios.post(`https://mawsueaa.com/link/read?hash=${hash}`)
+
+        if (read_hashed_link.data.success) {
+            const preDirectLink = read_hashed_link.data.result.route
+            const {data} = await axios.post(preDirectLink, null, {
+                headers: {"x-requested-with": "XMLHttpRequest", referer: preDirectLink},
+            });
+            DirectLinks.push(data.direct_link);
+            await useUpdateStatus(`تم اتجاز: %${progress}`, id)
+
+        }
+    }
+    return DirectLinks
+}

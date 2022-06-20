@@ -48,7 +48,8 @@ const exitHandler = () => {
     if (server) {
         server.close(() => {
             logger.info('Server closed');
-            process.exit(1);
+            logger.info("Restarting... ")
+            server.restart()
         });
     } else {
         process.exit(1);
@@ -69,6 +70,5 @@ process.on('SIGTERM', () => {
         server.close();
     }
 });
-const socket = new Server(server, { cors: { origin: "*" } });
 
-global.io = socket
+// lobal.io = socket

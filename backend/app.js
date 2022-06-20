@@ -13,7 +13,7 @@ const morgan = require('./config/morgan');
 
 const Akoam = require("./routes/akoam")
 const Arabseed = require("./routes/arabseed")
-const Public = require("./routes/api")
+const Scrapy = require("./routes/scrapy")
 const ApiError = require("./utils/ApiError");
 const {errorConverter, errorHandler} = require("./utils/Errors");
 
@@ -51,13 +51,10 @@ if (config.env !== 'test') {
 
 app.use(cors())
 
-// 1) MIDDLEWARE
-
-app.use(express.json());
 // 3) ROUTES
 app.use("/akoam", Akoam);
 app.use("/arabseed", Arabseed);
-app.use("/", Public);
+app.use("/", Scrapy);
 
 
 

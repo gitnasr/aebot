@@ -20,6 +20,7 @@
     "mongoose": "^6.0.12",
     "morgan": "^1.10.0",
     "node-ipinfo": "^3.1.0",
+    "qs": "^6.10.5",
     "request-ip": "^2.2.0",
     "socket.io": "^4.3.2",
     "winston": "^3.7.2",
