@@ -1,119 +1,79 @@
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState} from "react";
 
-import { AkoamSearch } from "../libs/api";
-import { CircularProgressbar } from "react-circular-progressbar";
-import { PuffLoader } from "react-spinners";
-import Router from "next/router";
-import { toast } from "react-toastify";
-import { useRouter } from "next/router";
-import { useSocket } from "../libs/socket";
+
+import {PuffLoader} from "react-spinners";
+import {useRouter} from "next/router";
+import {FaCheckCircle} from "@react-icons/all-files/fa/FaCheckCircle";
+import {MdArrowBack} from "@react-icons/all-files/md/MdArrowBack";
+import {SearchByOperationId} from "../libs/api";
 
 function Processing(props) {
-  const [IsLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const socket = useSocket("https://aemedia.herokuapp.com/");
+    const [IsLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
-  const [currentState, setCurrentState] = useState(0);
+    const [currentState, setCurrentState] = useState({status:"جاري جلب التحديثات"});
 
-  useEffect(() => {
-    const { id, service } = router.query;
+    async function InquireByOperation(OperationId) {
+        const {status, data} = await SearchByOperationId(OperationId)
 
-    if (!id || !service) return router.push("/");
-  }, []);
 
-  useEffect(() => {
-    const { id, service } = router.query;
-
-    if (socket) {
-      setIsLoading(false);
-      socket.on("Started", (e) => console.log(e));
-      if (service === "akoam/old") {
-        socket.on("Progress", (e) => {
-          if (e.id === id) {
-            setCurrentState(e.p);
-          }
-        });
-      } else {
-        socket.on("phase", (e) => {
-          if (e.id === id) {
-            setCurrentState(e.status);
-          }
-        });
-      }
-
-      socket.on("Done", (e) => {
-        if (e.id === id) {
-          Router.push(
-            { pathname: "/result", query: { id, service: service } },
-            "/"
-          );
-
-          
+        if (status === 200 || status === 204){
+            setCurrentState(data)
         }
+        if (data.isSuccess){
+           await router.push({ pathname: "/result", query: { id:data.operation   }, },"/")
 
-      });
-
-
-      socket.on("ERROR", (e) => {
-        if (e.id === id) {
-          Router.push(
-            { pathname: "/"},
-            "/"
-          );
-          toast.error("في حاجه غلط حصلت في العمليه، حاولنا نحلها لكن مقدرناش المره دي ، جرب تاني احنا اسفين")
         }
-      });
+    }
 
 
-  }
-  }, [socket]);
 
-  if (IsLoading)
-    return (
-      <div className="flex items-center justify-center min-h-screen m-auto bg-gray-100">
-        <PuffLoader color={"#AE36D7"} size={128} />
-      </div>
-    );
-  return (
-    <div className="flex flex-col items-center justify-center w-full min-h-screen space-y-2 text-center text-gray-900 bg-gray-100">
-      <img
-        alt="AEBot - بوت موقع اكوام وعرب سيد وايجي بيست"
-        src="/logo.png"
-        width={100}
-        className="mb-5"
-        onClick={() => router.push("/")}
-      />
-      <h1 className="text-xl font-semibold text-green-700 ">
-        تم بدء العمليه بنجاح ورقمها
-      </h1>
+    useEffect(() => {
+        const {id} = router.query;
+        const IntervalId = setInterval(InquireByOperation, 2000,id);
 
-      <div className="w-3/4 my-7">
-        <code className="my-3 text-4xl font-bold break-words sm:text-6xl">
-          {router.query.id}
-        </code>
-        {router.query.service === "akoam/old" ? (
-          <div className="w-3/4 m-auto mt-4 sm:w-48">
-            <CircularProgressbar
-              value={currentState}
-              text={`${currentState}%`}
-            />{" "}
-          </div>
-        ) : (
-          <div className="my-3 font-bold text-green-900">
-            <h1>{currentState}</h1>
-          </div>
-        )}
+        setIsLoading(false)
 
-        <p className="my-2 text-lg font-semibold text-center cursor-pointer">
-          لو العمليه طولت ممكن تسيب الصفحه بس احتفظ برقم العمليه عشان تعرف توصل
-          للعمليه لما تخلص من اللينك ده
-        </p>
-        <p className="text-gray-400">
-          المتوسط حوالي 15 ثانيه اكتر او اقل علي حسب الضغط
-        </p>
-      </div>
-    </div>
-  );
+        return () => clearInterval(IntervalId);
+    }, []);
+
+    if (IsLoading) return (<div className="flex items-center justify-center min-h-screen m-auto bg-gray-900">
+            <PuffLoader color={"#AE36D7"} size={128}/>
+        </div>);
+    return (<div
+            className="relative flex flex-col items-center justify-center w-full min-h-screen  text-center text-gray-900 bg-gray-900">
+      <span className={"bg-blue-600 text-white rounded-full cursor-pointer absolute top-5 left-5 sm:left-1/4"}
+            onClick={() => router.push("/")}>
+          <MdArrowBack size={48}/>
+      </span>
+
+            <span className={"flex flex-col items-center gap-4 bg-transparent text-green-500 rounded-full"}>
+                                    <FaCheckCircle size={64}/>
+
+               <h1 className="text-xl font-semibold text-gray-300  ">
+                        تم بدء العمليه بنجاح ورقمها
+               </h1>
+
+            </span>
+
+
+            <div className="w-full my-7">
+                <code className="my-3 text-4xl  font-extrabold uppercase text-green-600 sm:text-3xl">
+                    {router.query.id}
+                </code>
+                <div className="my-3 ">
+                    <h1 className={"text-info text-4xl"}>{currentState.status}</h1>
+                </div>
+
+                <p className="my-2 text-warning font-medium text-center p-2 max-w-md mx-auto">
+                    ممكن تسيب الصفحه بس احتفظ برقم العمليه عشان تعرف توصل
+                    للعمليه لما تخلص عن طريق الذهاب للصفحه الرئيسئه وتدوس علي استعلام برقم العملية
+                </p>
+                <small className="text-gray-400 text-xs">
+                    المتوسط حوالي 15 ثانيه اكتر او اقل علي حسب الضغط علي المصدر
+                </small>
+            </div>
+        </div>);
 }
 
 export default Processing;

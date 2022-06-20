@@ -2,48 +2,53 @@ import React, { useState } from "react";
 
 import Router from "next/router";
 import { SearchByOperationId } from "../libs/api";
-import { toast } from "react-toastify";
+import {MdSearch} from "@react-icons/all-files/md/MdSearch";
+import toast from "react-hot-toast";
 
 function SearchModel() {
   const [isLoading, setIsLoading] = useState(false);
   const [id, setId] = useState();
+
+  const Search = async () => {
+      setIsLoading(true);
+      const {status,data} = await SearchByOperationId(id);
+
+      if (status === 200) {
+          await Router.push(
+              {
+                  pathname: "/result",
+                  query: {id},
+              },
+              "/"
+          );
+
+      }
+      if (status == 204){
+          setIsLoading(false);
+          return toast.error("رقم العملية غير صحيح!")
+      }
+
+  }
   return (
-    <div className="container flex items-center justify-center w-full" dir="ltr">
-      <div className="relative">
-        <div className="absolute top-4 left-3 "> </div>
+    <div className="flex flex-wrap items-center justify-around w-full sm:max-w-4xl" dir="ltr">
+      <div className="relative w-full mt-4 shadow-xl">
         <input
+            disabled={isLoading}
           value={id}
           onChange={(e) => setId(e.target.value.trim())}
           type="text"
-          className="z-0 w-auto pl-10 pr-20 text-gray-800 border border-gray-300 rounded-lg h-14 focus:shadow focus:outline-none"
+          className="w-full px-10 text-gray-500 border border-gray-600  rounded-lg h-14 focus:shadow focus:outline-none bg-gray-900"
           placeholder="NXXXXXXX"
         />
-        <div className="absolute top-2 right-2">
+        <div className="absolute  rounded-full right-2 top-4 bottom-0">
           <button
+              type={"button"}
             disabled={isLoading}
-            onClick={async (e) => {
-              e.preventDefault();
-              setIsLoading(true);
-              const isFound = await SearchByOperationId(id);
+            onClick={Search}
 
-              if (!isFound) {
-                toast.error(
-                  "العمليه اللي بتدور عليها الرقم مش صحيح، لو متأكد من الرقم يبقي العمليه لسه مخلصتش جرب كمان حبه"
-                );
-              } else {
-                Router.push(
-                  {
-                    pathname: "/result",
-                    query: { id, service: isFound.service },
-                  },
-                  "/"
-                );
-              }
-              setIsLoading(false);
-            }}
-            className="w-20 h-10 text-white bg-purple-500 rounded-xl hover:bg-purple-600"
+            className=" text-white bg-transparent rounded-lg font-bold disabled:cursor-not-allowed  "
           >
-            استعلم
+            <MdSearch size={28}/>
           </button>
         </div>
       </div>

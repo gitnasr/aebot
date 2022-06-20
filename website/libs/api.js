@@ -1,80 +1,60 @@
-import { ChooseService } from "./lib";
-import axios from "axios";
-import { toast } from "react-toastify";
+import {ChooseService} from "./lib";
+import {apiErrorHandler, axiosPublic} from "./axios";
+import toast from "react-hot-toast";
 
-const API_LINK = "https://aemedia.herokuapp.com/";
-export const fetch_info = async (link) => {
-  const { service } = ChooseService(link);
-    let data
-  switch (service) {
-    case "ARABSEED":
-      data = await fetch_info_req("arabseed",link);
-      if (data) return data;
-      return toast.error("Something Went Error..!");
-    case "NEW_AKOAM":
-      data = await fetch_info_req("akoam",link);
-      if (data) return data;
-      return toast.error("Something Went Error..!");
-    case "OLD_AKOAM":
-      data = await fetch_info_req("akoam/old",link);
-      if (data) return data;
-      return toast.error("Something Went Error..!");
+export const GetLinkInfo = async (link) => {
+    const {service} = ChooseService(link);
+    switch (service) {
+        case "ARABSEED":
+            return await FetchInfo("arabseed", link);
 
-    default:
-      break;
-  }
+        case "NEW_AKOAM":
+            return await FetchInfo("akoam", link);
+
+        case "OLD_AKOAM":
+            return await FetchInfo("akoam/old", link);
+
+
+        default:
+            break;
+    }
 
 };
 
-const fetch_info_req = async (path,link) => {
-  const { data } = await axios.post(`${API_LINK}${path}`,{link});
-  if (data.error) return false;
-  data.service = path
-  return data;
+const FetchInfo = async (path, link) => {
+    try {
+        const {data, status} = await axiosPublic.post(`/${path}`, {link});
+
+        if (status === 201) return data;
+        return toast.error("حصلت مشكلة، جرب تعمل ريفريش")
+    } catch (error) {
+        return apiErrorHandler(error)
+    }
+
+
 };
 
 
-export const start_operation = async (path,id) => {
+export const SendOperationStartSignal = async (path, id) => {
     try {
-        const { data } = await axios.post(`${API_LINK}${path}`,{id});
-        if (data.error) return false;
-        return data.id;
+        const {status, data} = await axiosPublic.post(`/${path}/start`, {id});
+        if (status === 201) return {data, status};
+        return toast.error("حصلت مشكلة، جرب تعمل ريفريش")
+
     } catch (error) {
-        return false
+        return apiErrorHandler(error)
     }
-  
-  };
-  
-export const AkoamSearch = async (id) => { 
+
+};
+
+
+export const SearchByOperationId = async (id) => {
 
     try {
-        const {data} = await axios.post(`${API_LINK}akoam/search`,{id})
-        if (data.error) return false;
-        return data.result;
+        const {data,status} = await axiosPublic.get(`/search/${id}`)
+        return {data, status};
+
     } catch (error) {
-        return false
-    }
-}
-
-export const ArabseedSearch = async (id) => { 
-
-    try {
-        const {data} = await axios.post(`${API_LINK}arabseed/search`,{id})
-        if (data.error) return false;
-        return data.result;
-    } catch (error) {
-        return false
-    }
-}
-
-
-export const SearchByOperationId = async (id) => { 
-
-    try {
-        const {data} = await axios.post(`${API_LINK}search`,{id})
-        if (data.error) return false;
-        return {result:data.result,service:data.service};
-    } catch (error) {
-        return false
+        return apiErrorHandler(error)
     }
 }

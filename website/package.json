@@ -6,6 +6,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@react-icons/all-files": "^4.1.0",
     "axios": "^0.24.0",
     "daisyui": "^1.16.2",
     "next": "latest",
@@ -13,8 +14,8 @@
     "react": "^17.0.2",
     "react-circular-progressbar": "^2.0.4",
     "react-dom": "^17.0.2",
+    "react-hot-toast": "^2.2.0",
     "react-spinners": "^0.11.0",
-    "react-toastify": "^8.1.0",
     "socket.io-client": "^4.3.2"
   },
   "devDependencies": {
