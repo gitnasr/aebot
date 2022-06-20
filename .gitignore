@@ -1,3 +1,4 @@
+
 # Logs
 logs
 *.log
@@ -76,3 +77,5 @@ typings/
 .fusebox/
 
 *.idea
+website/yarn.lock
+website/pages/test.js
