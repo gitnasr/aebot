@@ -20,7 +20,7 @@ function Processing(props) {
         if (status === 200 || status === 204){
             setCurrentState(data)
         }
-        if (data.isSuccess){
+        if (data.isSuccess || data.isError){
            await router.push({ pathname: "/result", query: { id:data.operation   }, },"/")
 
         }
