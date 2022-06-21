@@ -21,7 +21,6 @@ export default function Home() {
       setIsEmpty(LinkAsText);
       setIsLoading(true);
       const link_info = await GetLinkInfo(LinkAsText);
-      if (link_info.status !== 201) return setIsLoading(false);
       setIsLoading(false);
       setLinkInfo(link_info);
 
