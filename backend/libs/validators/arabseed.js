@@ -10,7 +10,7 @@ const ArabseedOperationValidator = {
     body: {
         id: Joi.string().required().trim().alphanum().message("ليه كدا يغالي؟"),
 
-        quality:Joi.number().required().default(0).max(4)
+        quality:Joi.number().optional().default(1).max(4)
 
     }
 }

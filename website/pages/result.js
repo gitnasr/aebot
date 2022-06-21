@@ -54,9 +54,9 @@ function Result() {
       </span>
             <div className={"m-auto"}>
             <span className={"flex flex-col items-center gap-4 bg-transparent  rounded-full"}>
-                {Data.isSuccess ? <FaCheckCircle size={64} className={"text-green-600"}/> :
+                {!Data.isError ? <FaCheckCircle size={64} className={"text-green-600"}/> :
                     <FaTimesCircle size={64} className={"text-red-700"}/>}
-                {Data.isSuccess ? <h1 className="text-3xl font-semibold text-gray-100 ">
+                {!Data.isError ? <h1 className="text-3xl font-semibold text-gray-100 ">
                     تمت العمليه بنجاح في {Data.result?.time.toFixed(1)} ثانيه
                 </h1> : <div>
                     <h1 className="text-3xl font-semibold text-gray-100 ">فشلت العملية مع الاسف</h1>
@@ -64,7 +64,7 @@ function Result() {
                 </div>}
             </span>
 
-                {Data.isSuccess &&
+                {!Data.isError &&
                     <div className="flex flex-col ">
                         <InfoHome info={Data} done={true}/>
 
