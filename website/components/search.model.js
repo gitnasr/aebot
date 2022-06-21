@@ -16,7 +16,7 @@ function SearchModel() {
       if (status === 200) {
           await Router.push(
               {
-                  pathname: "/result",
+                  pathname: "/process",
                   query: {id},
               },
               "/"
@@ -37,16 +37,16 @@ function SearchModel() {
           value={id}
           onChange={(e) => setId(e.target.value.trim())}
           type="text"
-          className="w-full px-10 text-gray-500 border border-gray-600  rounded-lg h-14 focus:shadow focus:outline-none bg-gray-900"
+          className="w-full px-10 text-gray-500 bg-gray-900 border border-gray-600 rounded-lg h-14 focus:shadow focus:outline-none"
           placeholder="NXXXXXXX"
         />
-        <div className="absolute  rounded-full right-2 top-4 bottom-0">
+        <div className="absolute bottom-0 rounded-full right-2 top-4">
           <button
               type={"button"}
             disabled={isLoading}
             onClick={Search}
 
-            className=" text-white bg-transparent rounded-lg font-bold disabled:cursor-not-allowed  "
+            className="font-bold text-white bg-transparent rounded-lg  disabled:cursor-not-allowed"
           >
             <MdSearch size={28}/>
           </button>
