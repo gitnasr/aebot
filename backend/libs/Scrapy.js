@@ -2,6 +2,7 @@ const Scrapy = require("../models/scrapy");
 const {default: axios} = require("axios");
 const config = require("../config/config");
 const cheerio = require("cheerio");
+const axiosRetry = require("axios-retry");
 exports.useUpdateStatus = (status,id,isError=false) => {
     const update = {
         isError,
@@ -22,12 +23,14 @@ exports.SendRequestByProxy = async (link,method="GET",payload={},headers ={}) =>
 }
 
 exports.SendRequestByAxios = async (link,method="GET",payload={},headers ={}) =>{
+    axiosRetry(axios, { retries: 10 });
     const {data} = await axios({
         baseURL:encodeURI(link),
         data:payload,
         headers,
         method
     })
+
     return cheerio.load(data);
 }
 exports.findByQuality = (q,link) => {
