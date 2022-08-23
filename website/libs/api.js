@@ -1,4 +1,4 @@
-import {ChooseService} from "./lib";
+import {ChooseService} from "./index";
 import {apiErrorHandler, axiosPublic} from "./axios";
 import toast from "react-hot-toast";
 

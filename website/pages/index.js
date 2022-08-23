@@ -2,7 +2,7 @@ import Head from "next/head";
 import InfoHome from "../components/info.home";
 import LoadingHomeShimmer from "../components/loading.home";
 import SearchModel from "../components/search.model";
-import { isValidSchema } from "../libs/lib";
+import { isValidSchema } from "../libs";
 import { useState } from "react";
 import {GetLinkInfo} from "../libs/api";
 
@@ -32,9 +32,6 @@ export default function Home() {
       className="flex flex-col items-center justify-center min-h-screen py-10 text-gray-300 bg-gray-900"
       dir="rtl"
     >
-      <Head>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
 
       <main className="flex flex-col items-center justify-center flex-1 w-full px-3 text-center ">
         <div className="flex flex-wrap items-center justify-around max-w-4xl sm:w-full">

@@ -3,55 +3,55 @@ import {useRouter} from "next/router";
 
 import InfoHome from "../components/info.home";
 import {PuffLoader} from "react-spinners";
-import {TextFile} from "../libs/lib";
 import toast from "react-hot-toast";
-import {SearchByOperationId} from "../libs/api";
 import {MdArrowBack} from "@react-icons/all-files/md/MdArrowBack";
 import {FaCheckCircle} from "@react-icons/all-files/fa/FaCheckCircle";
 import {FaTimesCircle} from "@react-icons/all-files/fa/FaTimesCircle";
+import {TextFile} from "../libs";
+import {SearchByOperationId} from "../libs/api";
 
-function Result() {
-    const [IsLoading, setIsLoading] = useState(true);
-    const [Data, setData] = useState({});
-
+const Result = ({id})  => {
     const router = useRouter();
-
-
-    const InquireByOperation = async (OperationId) => {
-        const {status, data} = await SearchByOperationId(OperationId)
+    const [isLoading, setIsLoading] = useState(true);
+    const [Data, setData] = useState({});
+    const InquireByOperation = async () => {
+        const {status, data} = await SearchByOperationId(id)
 
 
         if (status === 200) {
             setData(data)
-            setIsLoading(false)
+             setIsLoading(false)
 
-        }else{
-            await router.push("/404")
+        } else {
+              router.push("/404")
         }
-
     }
-
     useEffect(() => {
-        const {id} = router.query;
-        //
-        InquireByOperation(id)
+        async function fetchData() {
+          await  InquireByOperation()
+        }
+        fetchData();
+        return () => {
+            setData(null)
+            setIsLoading(true)
+        }
+    } , [])
 
-        // return () => setData({})
-
-    }, []);
-    if (IsLoading)
+    if (isLoading){
         return (
             <div className="flex items-center justify-center min-h-screen m-auto bg-gray-900">
                 <PuffLoader color={"#AE36D7"} size={128}/>
             </div>
         );
+    }
+
     return (
         <div
             className="flex flex-col items-center justify-center w-full min-h-screen text-center text-gray-300 bg-gray-900 p-7 relative pt-24">
-         <span className={"bg-blue-600 text-white rounded-full cursor-pointer absolute top-5 left-5 sm:left-1/4"}
+            <span className={"bg-blue-600 text-white rounded-full cursor-pointer absolute top-5 left-5 sm:left-1/4"}
                onClick={() => router.push("/")}>
-          <MdArrowBack size={48}/>
-      </span>
+                <MdArrowBack size={48}/>
+            </span>
             <div className={"m-auto"}>
             <span className={"flex flex-col items-center gap-4 bg-transparent  rounded-full"}>
                 {!Data.isError ? <FaCheckCircle size={64} className={"text-green-600"}/> :
@@ -72,7 +72,7 @@ function Result() {
                             id="links"
                             readOnly
                             rows={Data.result.direct_links.length}
-                            className="h-full p-3 my-2 overflow-hidden text-gray-100 border-2 border-green-600 rounded-lg resize-none focus:outline-none bg-gray-800 cursor-pointer"
+                            className="max-h-40 p-3 my-2 overflow-hidden text-gray-100 border-2 border-green-600 rounded-lg resize-none focus:outline-none bg-gray-800 cursor-pointer"
                             value={Data.result.direct_links.join("\n")}
                             onClick={() => {
                                 navigator.clipboard.writeText(Data?.result.direct_links.join("\n"));
@@ -93,12 +93,23 @@ function Result() {
                             الكمبيوتر او ADM للاندوريد بكل سهوله
                         </p>
                         <code className="my-3 font-mono text-xs uppercase ">
-                            {Data.operation}
+                            {id}
                         </code>
                     </div>}
             </div>
         </div>
     );
 }
-
+export function getServerSideProps(context) {
+    const {id} = context.query;
+    if (!id) return {redirect: {
+            destination: "/",
+            permanent: false,
+        }};
+    return {
+        props: {
+            id: context.query.id
+        },
+    }
+}
 export default Result;

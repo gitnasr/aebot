@@ -1,6 +1,6 @@
 function isValidURL(string) {
-  var res = string.match(
-    /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
+  const res = string.match(
+      /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
   );
   return res !== null;
 }
@@ -27,7 +27,7 @@ export const TextFile = (name) => {
   });
   element.href = URL.createObjectURL(file);
   element.download = name + ".txt";
-  document.body.appendChild(element); // Required for this to work in FireFox
+  document.body.appendChild(element);
   element.click();
 };
 
