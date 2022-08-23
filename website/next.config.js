@@ -15,4 +15,4 @@ const nextConfig = {
 		locales: ["ar"], defaultLocale: "ar",
 	},
 }
-export default withPWA(nextConfig)
+module.exports = withPWA(nextConfig)
