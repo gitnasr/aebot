@@ -49,14 +49,17 @@ exports.StartScrapper = catchAsync(async (req, res) => {
     const q = new Queue("akoam:new", Redis);
 
 
-    q.add({db: id, db_data: isExisted}, {jobId: operation_id});
+    q.add({db: id, db_data: isExisted}, {jobId: operation_id, removeOnComplete: true});
     q.process(async (job, done) => {
         const docId = job.data.db_data._id
-        const doc = job.data.db_data
         await Scrapy.findByIdAndUpdate(docId, {isProcessing: true, operation: job.id,})
         try {
 
-
+            const doc = await Scrapy.findByIdAndUpdate(docId, {
+                isProcessing: true,
+                operation: job.id,
+                status: "تم البدء بنجاح"
+            }, {new: true})
             const start = Date.now();
 
             const episodes_links = await AkwamNewGetEpisodesLinks(doc.link, docId);
@@ -119,7 +122,7 @@ exports.StartOldScrapper = catchAsync(async (req, res) => {
 
 
     const q = new Queue("akoam:old", Redis);
-    q.add({db: id, db_data: isExisted}, {jobId: operation_id});
+    q.add({db: id, db_data: isExisted}, {jobId: operation_id,removeOnComplete: true});
     q.process(async (job, done) => {
         const docId = job.data.db_data._id
 
@@ -149,6 +152,7 @@ exports.StartOldScrapper = catchAsync(async (req, res) => {
 
             done(null, {DirectLinks, time});
         } catch (error) {
+            console.log(error)
             await useUpdateStatus(`حدثت مشكله، مع الاسف`, docId, true)
 
             done(error);

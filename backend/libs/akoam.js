@@ -1,30 +1,35 @@
 const { default: axios } = require("axios");
-const cheerio = require("cheerio");
 const { isValidHttpUrl } = require("./helpers/is.url");
 const {useUpdateStatus, SendRequestByAxios} = require("./Scrapy");
 
 
 exports.AkwamNewInfoFetcher = async (link) => {
+    try {
+        const html = await SendRequestByAxios(link)
+        let domain = (new URL(link)).hostname;
 
-    const html = await SendRequestByAxios(link)
-    let domain = (new URL(link)).hostname;
+        const title = html("h1")?.text();
+        const poster = html(
+            ".col-lg-3, col-md-4 text-center mb-5 mb-md-0"
+        ).children()[0]?.attribs.href;
+
+        const episodes = html(".entry-date").length;
+
+        const story = html("p")[0]?.children[0]?.data;
+
+        return {title,poster,episodes,story,domain}
+    }catch (e) {
+        console.log(e)
+        return  {}
+    }
 
 
-    const title = html("h1")?.text();
-    const poster = html(
-        ".col-lg-3, col-md-4 text-center mb-5 mb-md-0"
-    ).children()[0]?.attribs.href;
-
-    const episodes = html(".entry-date").length;
-
-    const story = html("p")[0]?.children[0]?.data;
-
-    return {title,poster,episodes,story,domain}
 }
 
 
 
 exports.AkwamNewGetEpisodesLinks = async (link, id) => {
+    console.log(link)
     const episodes_links = [];
     const html =await SendRequestByAxios(link)
 
@@ -130,18 +135,12 @@ exports.AkwamOldGetDirectLinks = async (episodes,id) => {
         const progress = (((index + 1) / episodes.length) * 100).toFixed(1)
 
         const link = episodes[index]
-        const hash = link.split("/").pop()
-        const read_hashed_link = await axios.post(`https://mawsueaa.com/link/read?hash=${hash}`)
 
-        if (read_hashed_link.data.success) {
-            const preDirectLink = read_hashed_link.data.result.route
-            const {data} = await axios.post(preDirectLink, null, {
-                headers: {"x-requested-with": "XMLHttpRequest", referer: preDirectLink},
-            });
-            DirectLinks.push(data.direct_link);
-            await useUpdateStatus(`تم اتجاز: %${progress}`, id)
-
-        }
+        const {data} = await axios.post(link, null, {
+            headers: {"x-requested-with": "XMLHttpRequest", referer: link},
+        });
+        DirectLinks.push(data.direct_link);
+        await useUpdateStatus(`تم اتجاز: %${progress}`, id)
     }
     return DirectLinks
 }

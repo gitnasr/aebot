@@ -6,6 +6,6 @@ const router = express.Router();
 
 
 router.route("/search/:operation").get(validate(OperationIdValidator),ScrapyController.SearchByOperationId);
-
+router.route("/cleanup").get(ScrapyController.CleanUp);
 
 module.exports = router;
