@@ -94,7 +94,7 @@ const GetServerDownloadLinks = async (PrimeDownloadLinks,id) => {
             },
         });
 
-        let final_link = html("#direct_link").children("a")[0].attribs.href;
+        let final_link = html(".download-button").children("a")[0].attribs.href;
 
         final_links.push(final_link);
         await useUpdateStatus(`كود2: الحلقة رقم #${i+1}`,id)

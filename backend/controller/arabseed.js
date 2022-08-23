@@ -40,6 +40,7 @@ exports.StartScrapper = catchAsync(async (req, res) => {
     const q = new Queue("arabseed:new", Redis);
     q.add({db: id, quality}, {
         jobId: operation_id,
+        removeOnComplete: true,
 
     },{});
 
