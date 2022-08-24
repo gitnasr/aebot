@@ -44,7 +44,7 @@ export default function Home() {
           <input
             disabled={IsLoading}
             type="url"
-            className="w-full p-4 text-gray-300 border border-green-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-gray-800 disabled:cursor-not-allowed"
+            className="w-full p-4 text-gray-300 bg-gray-800 border border-green-600 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent disabled:cursor-not-allowed"
             dir={`${!IsEmpty ? "rtl" : "ltr"}`}
             onChange={(e) => {
               setIsEmpty(e.target.value);
@@ -75,13 +75,13 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="font-medium flex flex-col gap-4 mt-4 text-sm text-gray-500">
+        <div className="flex flex-col gap-4 mt-4 text-sm font-medium text-gray-500">
           <p>
             حاليًا المواقع المدعومه هما أكوام الجديد، أكوام القديم، وعرب سيد
-            ولو عندك موقع تحب نضيفه، تقدر تكلمني علي <a className={"text-blue-500 hover:underline"} href={"https://twiter.com/c7nasr"} rel={"noreferrer"} target={"_blank"}>.تويتر من هنا</a>
+            ولو عندك موقع تحب نضيفه، تقدر تكلمني علي <a className={"text-blue-500 hover:underline"} href={"https://twiter.com/m9nasr"} rel={"noreferrer"} target={"_blank"}>.تويتر من هنا</a>
           </p>
           <p
-            className="text-gray-500 text-xs"
+            className="text-xs text-gray-500"
 
           >
             كمان في برنامج مخصص لأيجي بيست بيعمل نفس الوظيفه تقدر تحمله <a href={"https://eb.nasrika.com"} className={"text-blue-500 hover:underline"} rel={"noreferrer"} target={"_blank"}>من هنا</a>
