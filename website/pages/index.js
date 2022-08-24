@@ -78,7 +78,7 @@ export default function Home() {
         <div className="flex flex-col gap-4 mt-4 text-sm font-medium text-gray-500">
           <p>
             حاليًا المواقع المدعومه هما أكوام الجديد، أكوام القديم، وعرب سيد
-            ولو عندك موقع تحب نضيفه، تقدر تكلمني علي <a className={"text-blue-500 hover:underline"} href={"https://twiter.com/m9nasr"} rel={"noreferrer"} target={"_blank"}>.تويتر من هنا</a>
+            ولو عندك موقع تحب نضيفه، تقدر تكلمني علي <a className={"text-blue-500 hover:underline"} href={"https://twitter.com/m9nasr"} rel={"noreferrer"} target={"_blank"}>.تويتر من هنا</a>
           </p>
           <p
             className="text-xs text-gray-500"
