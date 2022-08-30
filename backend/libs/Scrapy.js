@@ -1,6 +1,5 @@
 const Scrapy = require("../models/scrapy");
 const axios = require("axios");
-const config = require("../config/config");
 const cheerio = require("cheerio");
 const axiosRetry = require("axios-retry");
 const ApiError = require("../utils/ApiError");
@@ -15,7 +14,7 @@ exports.useUpdateStatus = (status, id, isError = false) => {
 exports.SendRequestByProxy = async (link, method = "GET", payload = {}, headers = {}) => {
 
 	const {data} = await axios({
-		baseURL: `${config.PROXY_API}${link}`, data: payload, headers, method
+		baseURL: `https://desolate-escarpment-25251.herokuapp.com/?url=${link}`, data: payload, headers, method
 	})
 	return cheerio.load(data);
 }
@@ -39,6 +38,14 @@ exports.SendRequestByAxios = async (link, method = "GET", payload = {}, headers 
 	}
 
 
+}
+const { CookieJar } = require('tough-cookie');
+const { wrapper } = require('axios-cookiejar-support');
+
+exports.SendRequestByCookiesSaver = () =>{
+	const jar = new CookieJar();
+
+	return wrapper(axios.create({jar}));
 }
 exports.findByQuality = (q, link) => {
 	return Scrapy.findOne({quality: q, link,})

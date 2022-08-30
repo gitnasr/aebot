@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.24.0",
+    "axios": "^0.27.2",
+    "axios-cookiejar-support": "^4.0.3",
     "axios-retry": "^3.3.1",
     "bull": "^4.1.0",
     "cheerio": "^1.0.0-rc.10",
@@ -24,6 +25,7 @@
     "qs": "^6.10.5",
     "request-ip": "^2.2.0",
     "socket.io": "^4.3.2",
+    "tough-cookie": "^4.1.2",
     "winston": "^3.7.2",
     "xss-clean": "^0.1.1"
   },

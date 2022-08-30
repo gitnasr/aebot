@@ -48,19 +48,25 @@ exports.StartScrapper = catchAsync(async (req, res) => {
         const start = Date.now();
 
         const {quality, db} = job.data;
+        console.log(job.data)
         const q = quality - 1
         const doc = await Scrapy.findByIdAndUpdate(db, {operation: job.id,quality: q,isProcessing:true}, {new: true});
         try {
-                await useUpdateStatus("تم بدأ العملية ...", doc._id,)
+            await useUpdateStatus("تم بدأ العملية ...", doc._id,)
             const PrimeDownloadLinks = await Arabseeder.GetArabseedDownloadLinks(doc.info.episodes_links, q, doc.link, doc._id)
 
-            if (PrimeDownloadLinks.length === 0) {
+            if (PrimeDownloadLinks.length === 0 || PrimeDownloadLinks.includes(undefined)) {
                 return useUpdateStatus("مع الاسف، حدثت مشكلة في كود1، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
             }
-            const FinalLinks = await Arabseeder.GetServerDownloadLinks(PrimeDownloadLinks, doc._id)
+            const ServerLinks = await Arabseeder.SkipCountdown(PrimeDownloadLinks,doc._id)
+            if (ServerLinks.length === 0 || ServerLinks.includes(undefined)) {
+                return useUpdateStatus("مع الاسف، حدثت مشكلة في كود2، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
+
+            }
+            const FinalLinks = await Arabseeder.GetServerDownloadLinks(ServerLinks, doc._id)
 
             if (FinalLinks.length === 0) {
-                return useUpdateStatus("مع الاسف، حدثت مشكلة في كود2، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
+                return useUpdateStatus("مع الاسف، حدثت مشكلة في كود3، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
 
             }
             const end = Date.now();
