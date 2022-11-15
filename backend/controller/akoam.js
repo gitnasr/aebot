@@ -7,7 +7,7 @@ const {
     AkwamNewGetDirectLinks,
     AkwamOldGetInfo,
     AkwamOldGetEpisodesLink,
-    AkwamOldGetDirectLinks,
+    AkwamOldGetDirectLinks, AkwamOldGetPreDirectLinks,
 } = require("../libs/akoam");
 const Scrapy = require("../models/scrapy");
 const Queue = require("bull");
@@ -137,7 +137,9 @@ exports.StartOldScrapper = catchAsync(async (req, res) => {
             const Episodes = await AkwamOldGetEpisodesLink(doc.link)
 
             if (Episodes.length === 0) return useUpdateStatus("اممم، مشكلة في كود1. للاسف، فشلت العملية", true, docId)
-            const DirectLinks = await AkwamOldGetDirectLinks(Episodes, docId)
+
+            const episodes_links = await AkwamOldGetPreDirectLinks(Episodes, docId);
+            const DirectLinks = await AkwamOldGetDirectLinks(episodes_links, docId)
             const end = Date.now();
             const time = (end - start) / 1000;
 

@@ -29,7 +29,6 @@ exports.AkwamNewInfoFetcher = async (link) => {
 
 
 exports.AkwamNewGetEpisodesLinks = async (link, id) => {
-    console.log(link)
     const episodes_links = [];
     const html =await SendRequestByAxios(link)
 
@@ -128,6 +127,22 @@ exports.AkwamOldGetEpisodesLink = async (link) => {
             Episodes_Links.push(i.attribs.href)});
 
     return [...new Set(Episodes_Links)];
+}
+exports.AkwamOldGetPreDirectLinks = async (shorted_links,id) => {
+    const preDirect = []
+    for (let index = 0; index < shorted_links.length; index++) {
+        const progress = (((index + 1) / shorted_links.length) * 100).toFixed(1)
+
+        const link = shorted_links[index]
+
+        const {data,headers} = await axios.get(link);
+        const decoded_cookies = JSON.parse(decodeURIComponent(headers['set-cookie'][0].split(';')[0].split('=')[1]))
+        const link_from_cookies = decoded_cookies['route']
+
+        preDirect.push(link_from_cookies);
+        await useUpdateStatus(`تم اتجاز: %${progress} كود 3:`, id)
+    }
+    return preDirect
 }
 exports.AkwamOldGetDirectLinks = async (episodes,id) => {
     const DirectLinks = []
