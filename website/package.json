@@ -9,7 +9,7 @@
     "@react-icons/all-files": "^4.1.0",
     "axios": "^0.24.0",
     "daisyui": "^1.16.2",
-    "next": "latest",
+    "next": "^13.0.2",
     "next-pwa": "marcofranssen/next-pwa#fix-pwa-config",
     "react": "^17.0.2",
     "react-circular-progressbar": "^2.0.4",
