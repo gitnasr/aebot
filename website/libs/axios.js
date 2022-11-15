@@ -1,7 +1,7 @@
 import axios from 'axios';
 import toast from "react-hot-toast";
 
-let BASE_URL = process.env.NODE_ENV === "production" ? 'https://aemedia.herokuapp.com' : "http://127.0.0.1:5001";
+let BASE_URL = process.env.NODE_ENV === "production" ? 'https://aebot.onrender.com' : "http://127.0.0.1:5001";
 
 export const axiosPublic =  axios.create({
     baseURL: BASE_URL,
