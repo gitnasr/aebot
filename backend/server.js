@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 const app = require('./app');
 const config = require('./config/config');
 const logger = require('./config/logger');
-const Socket = require("./libs/Socket");
-const { Server } = require("socket.io");
 let server;
 mongoose.connect(config.mongoose.url.replace("<PASSWORD>", config.mongoose.password), config.mongoose.options).then(() => {
     logger.info('Connected to MongoDB');
@@ -18,7 +16,6 @@ const exitHandler = () => {
         server.close(() => {
             logger.info('Server closed');
             logger.info("Restarting... ")
-            server.restart()
         });
     } else {
         process.exit(1);
@@ -39,5 +36,3 @@ process.on('SIGTERM', () => {
         server.close();
     }
 });
-
-// lobal.io = socket
