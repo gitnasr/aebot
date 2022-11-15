@@ -2,7 +2,6 @@ const {AkwamNewInfoFetcher, AkwamNewGetEpisodesLinks, AkwamNewGetShortedLinks, A
 	AkwamNewGetDirectLinks, AkwamOldGetEpisodesLink, AkwamOldGetInfo, AkwamOldGetDirectLinks, AkwamOldGetPreDirectLinks
 } = require("../libs/akoam");
 const { connectDB, dropDB, dropCollections } = require("./db.setup");
-const Scrapy = require("../models/scrapy");
 
 beforeAll(async () => {
 	await connectDB();

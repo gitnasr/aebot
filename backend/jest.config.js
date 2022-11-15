@@ -4,7 +4,7 @@ const config = {
 	testEnvironment: 'node',
 	testMatch: ['**/*.test.js'],
 	testPathIgnorePatterns: ['<rootDir>/node_modules/'],
-	testTimeout: 30000,
+	testTimeout: 300000,
 
 	preset: '@shelf/jest-mongodb',
 };

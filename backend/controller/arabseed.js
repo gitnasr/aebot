@@ -48,12 +48,11 @@ exports.StartScrapper = catchAsync(async (req, res) => {
         const start = Date.now();
 
         const {quality, db} = job.data;
-        console.log(job.data)
         const q = quality - 1
         const doc = await Scrapy.findByIdAndUpdate(db, {operation: job.id,quality: q,isProcessing:true}, {new: true});
         try {
             await useUpdateStatus("تم بدأ العملية ...", doc._id,)
-            const PrimeDownloadLinks = await Arabseeder.GetArabseedDownloadLinks(doc.info.episodes_links, q, doc.link, doc._id)
+            const PrimeDownloadLinks = await Arabseeder.GetArabseedDownloadLinks(doc.info.episodes_links, doc._id)
 
             if (PrimeDownloadLinks.length === 0 || PrimeDownloadLinks.includes(undefined)) {
                 return useUpdateStatus("مع الاسف، حدثت مشكلة في كود1، ابعتلي سكرين شوت علي حسابي عشان ابحث في المشكلة", doc._id, true)
