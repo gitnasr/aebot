@@ -1,6 +1,14 @@
 /**
  * @type {import('next').NextConfig}
  */
+const runtimeCaching = require("next-pwa/cache");
+const withPWA = require("next-pwa")({
+	dest: "public",
+	disable: process.env.NODE_ENV === "development",
+	register: true,
+	runtimeCaching,
+	buildExcludes: [/middleware-manifest.json$/],
+  });
 const nextConfig = {
   swcMinify: true,
   compiler: {
@@ -12,9 +20,5 @@ const nextConfig = {
     defaultLocale: "ar",
   },
 };
-const withPWA = require('next-pwa')({
-	dest: 'public',
-	disable: process.env.NODE_ENV === 'development',
-	register: true,
-  });
-  module.exports = withPWA(nextConfig);
+
+module.exports = withPWA(nextConfig);
