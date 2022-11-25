@@ -80,4 +80,4 @@ typings/
 website/yarn.lock
 website/pages/test.js
 backend/yarn.lock
-arabseed/107/chromedriver.exe
+chromedriver.exe
