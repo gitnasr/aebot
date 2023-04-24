@@ -16,7 +16,6 @@ export default function Home() {
   const pasteFromClipboard = async () => {
     const LinkAsText = await navigator?.clipboard.readText();
 
-    if (isValidSchema(LinkAsText)) {
       setLinkInfo()
       setIsEmpty(LinkAsText);
       setIsLoading(true);
@@ -24,7 +23,6 @@ export default function Home() {
       setIsLoading(false);
       setLinkInfo(link_info);
 
-    }
 
   };
   return (
