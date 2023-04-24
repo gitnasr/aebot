@@ -33,7 +33,7 @@ export const TextFile = (name) => {
 
 export const ChooseService = (link) => {
   try {
-    const AKOAM_SCHEMA = "akwam";
+    const AKOAM_SCHEMA = "akwam" || "ak4ar";
     const OLD_SCHEMA = "old.akwam";
     const ARAB_SCHEMA = "arabseed";
     if (link.includes(OLD_SCHEMA)) return { service: "OLD_AKOAM" };
