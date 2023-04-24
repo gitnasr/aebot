@@ -1,7 +1,7 @@
 const Joi = require("joi");
 const ValidateNewAkoamLink = {
     body:Joi.object({
-        link: Joi.string().required().trim().uri().regex(/\bakwam\b/).message("اللينك ده مش لينك اكوام الجديد")
+        link: Joi.string().required().trim().uri().message("اللينك ده مش لينك اكوام الجديد")
     })
 }
 const ValidateOldAkoamLink = {
